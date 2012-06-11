@@ -1,11 +1,16 @@
 import os
 
+CachedFilesMixin = None
 try:
     from staticfiles import finders
     from staticfiles.storage import CachedFilesMixin, StaticFilesStorage
 except ImportError:
     from django.contrib.staticfiles import finders # noqa
-    from django.contrib.staticfiles.storage import CachedFilesMixin, StaticFilesStorage # noqa
+    from django.contrib.staticfiles.storage import StaticFilesStorage # noqa
+    try:
+        from django.contrib.staticfiles.storage import CachedFilesMixin
+    except ImportError:
+        pass
 
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import get_storage_class
@@ -63,12 +68,11 @@ class NonPackagingPipelineStorage(NonPackagingMixin, PipelineStorage):
     pass
 
 
-class PipelineCachedStorage(PipelineMixin, CachedFilesMixin, StaticFilesStorage):
-    pass
-
-
-class NonPackagingPipelineCachedStorage(NonPackagingMixin, PipelineCachedStorage):
-    pass
+if CachedFilesMixin:
+    class PipelineCachedStorage(PipelineMixin, CachedFilesMixin, StaticFilesStorage):
+        pass
+    class NonPackagingPipelineCachedStorage(NonPackagingMixin, PipelineCachedStorage):
+        pass
 
 
 class BaseFinderStorage(PipelineStorage):
@@ -115,7 +119,11 @@ class BaseFinderStorage(PipelineStorage):
         return storage._open(name, mode)
 
     def _save(self, name, content):
-        storage = self.find_storage(name)
+        try:
+            storage = self.find_storage(name)
+        except ValueError:
+            # Default to saving it ourselves
+            storage = fallback_storage
         # Ensure we overwrite file, since we have no control on external storage
         if storage.exists(name):
             storage.delete(name)
@@ -129,6 +137,15 @@ class PipelineFinderStorage(BaseFinderStorage):
 class DefaultStorage(LazyObject):
     def _setup(self):
         self._wrapped = get_storage_class(settings.PIPELINE_STORAGE)()
-
-
 default_storage = DefaultStorage()
+
+class FallbackStaticStorage(StaticFilesStorage):
+    def __init__(self, *args, **kwargs):
+        kwargs['location'] = kwargs.pop('location', settings.PIPELINE_ROOT)
+        super(FallbackStaticStorage, self).__init__(*args, **kwargs)
+
+class FallbackStorage(LazyObject):
+    def _setup(self):
+        self._wrapped = get_storage_class(settings.PIPELINE_FALLBACK_STORAGE)()
+fallback_storage = FallbackStorage()
+

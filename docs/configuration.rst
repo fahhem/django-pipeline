@@ -226,3 +226,15 @@ All javascript output is wrapped in an anonymous function : ::
 This safety wrapper, make it difficult to pollute the global namespace by accident and improve performance.
 
 You can override this behavior by setting ``PIPELINE_DISABLE_WRAPPER`` to ``True``.
+
+Storing rewritten static files in development
+=============================================
+
+When developing, you will want your javascript and CSS to run through the
+compilers when they do rewriting, such as LESS and SASS. By default, they are
+stored using the StaticFilesStorage modified to use ``PIPELINE_ROOT``,
+effectively keeping them out of your way and code versioning. You can override like so: ::
+
+  PIPELINE_FALLBACK_STORAGE = 'pipeline.storage.FallbackStaticStorage'
+
+
