@@ -13,7 +13,7 @@ except ImportError:
     from django.contrib.staticfiles import finders # noqa
 
 from pipeline.conf import settings
-from pipeline.utils import to_class, relpath
+from pipeline.utils import relpath, to_class
 from pipeline.storage import default_storage
 
 URL_DETECTOR = r'url\([\'"]?([^\s)]+\.[a-z]+[\?\#\d\w]*)[\'"]?\)'
@@ -192,7 +192,7 @@ class Compressor(object):
         given the path of the stylesheet that contains it.
         """
         if os.path.isabs(path):
-            path = os.path.join(default_storage.location, path)
+            path = os.path.join(self.storage.location, path)
         else:
             path = os.path.join(start, path)
         return os.path.normpath(path)
@@ -205,7 +205,8 @@ class Compressor(object):
 
     def read_file(self, path):
         """Read file content in binary mode"""
-        file = default_storage.open(path, 'rb')
+        path = finders.find(path)
+        file = self.storage.open(path, 'rb')
         content = file.read()
         file.close()
         return content

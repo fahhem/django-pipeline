@@ -8,7 +8,7 @@ except ImportError:
 
 from pipeline.conf import settings
 from pipeline.storage import default_storage
-from pipeline.utils import to_class
+from pipeline.utils import get_remote_path, path_is_url, to_class
 
 
 class Compiler(object):
@@ -33,6 +33,10 @@ class Compiler(object):
         for index, input_path in enumerate(paths):
             for compiler in compilers:
                 compiler = compiler(self.verbose)
+
+                if path_is_url(input_path):
+                    input_path = get_remote_path(input_path)
+
                 if compiler.match_file(input_path):
                     output_path = compiler.output_path(input_path)
                     paths[index] = output_path

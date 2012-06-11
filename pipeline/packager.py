@@ -7,6 +7,7 @@ from pipeline.compressors import Compressor
 from pipeline.glob import glob
 from pipeline.signals import css_compressed, js_compressed
 from pipeline.storage import default_storage
+from pipeline.utils import path_is_url
 
 
 class Package(object):
@@ -19,9 +20,14 @@ class Package(object):
         if not self._sources:
             paths = []
             for pattern in self.config.get('source_filenames', []):
+                if path_is_url(pattern):
+                    paths.append(pattern)
+                    continue
+
                 for path in glob(pattern):
                     if not path in paths:
                         paths.append(str(path))
+
             self._sources = paths
         return self._sources
 

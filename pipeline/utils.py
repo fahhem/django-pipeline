@@ -1,3 +1,4 @@
+import hashlib
 import mimetypes
 import os
 import sys
@@ -18,6 +19,19 @@ def to_class(class_str):
     module = importlib.import_module(module_path)
     return getattr(module, class_name, None)
 
+def path_is_url(path):
+    return (path.startswith('http') and '//' in path) or \
+                path.startswith('//')
+
+def get_remote_path(url):
+    filename = '%s/%s%s' % (
+        settings.settings.STATIC_ROOT,
+        hashlib.md5(url).hexdigest(),
+        os.path.basename(url),
+    )
+    if not os.path.exists(filename):
+        urllib.urlretrieve(url, filename)
+    return filename
 
 def filepath_to_uri(path):
     if path is None:
