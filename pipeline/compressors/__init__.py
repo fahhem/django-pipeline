@@ -16,8 +16,8 @@ from pipeline.conf import settings
 from pipeline.utils import relpath, to_class
 from pipeline.storage import default_storage
 
-URL_DETECTOR = r'url\([\'"]?([^\s)]+\.[a-z]+[\?\#\d\w]*)[\'"]?\)'
-URL_REPLACER = r'url\(__EMBED__(.+?)(\?\d+)?\)'
+URL_DETECTOR = re.compile(r'url\([\'"]?([^\s)]+\.[a-z]+[\?\#\d\w]*)[\'"]?\)')
+URL_REPLACER = re.compile(r'url\(__EMBED__(.+?)(\?\d+)?\)')
 
 DEFAULT_TEMPLATE_FUNC = "template"
 TEMPLATE_FUNC = r"""var template = function(str){var fn = new Function('obj', 'var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push(\''+str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/<%=([\s\S]+?)%>/g,function(match,code){return "',"+code.replace(/\\'/g, "'")+",'";}).replace(/<%([\s\S]+?)%>/g,function(match,code){return "');"+code.replace(/\\'/g, "'").replace(/[\r\n\t]/g,' ')+"__p.push('";}).replace(/\r/g,'\\r').replace(/\n/g,'\\n').replace(/\t/g,'\\t')+"');}return __p.join('');");return fn;};"""
@@ -133,7 +133,7 @@ class Compressor(object):
                     output_filename, variant)
                 return "url(%s)" % asset_url
             content = self.read_file(path)
-            content = re.sub(URL_DETECTOR, reconstruct, smart_str(content))
+            content = URL_DETECTOR.sub(reconstruct, smart_str(content))
             stylesheets.append(content)
         return '\n'.join(stylesheets)
 
@@ -171,7 +171,7 @@ class Compressor(object):
             mime_type = self.mime_type(path)
             data = self.encoded_content(path)
             return "url(\"data:%s;charset=utf-8;base64,%s\")" % (mime_type, data)
-        return re.sub(URL_REPLACER, datauri, css)
+        return URL_REPLACER.sub(datauri, css)
 
     def encoded_content(self, path):
         """Return the base64 encoded contents"""

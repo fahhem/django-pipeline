@@ -24,10 +24,11 @@ def path_is_url(path):
                 path.startswith('//')
 
 def get_remote_path(url):
-    filename = '%s/%s%s' % (
+    filename = '%s/%s_%s.%s' % (
         settings.settings.STATIC_ROOT,
+        getattr(settings.settings, 'PIPELINE_REMOTE_FILE_PREFIX', ''),
         hashlib.md5(url).hexdigest(),
-        os.path.basename(url),
+        os.path.basename(url).split('?')[0],
     )
     if not os.path.exists(filename):
         urllib.urlretrieve(url, filename)
